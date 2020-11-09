@@ -1,0 +1,51 @@
+server:
+  port: 8080
+  tomcat:
+    uri-encoding: utf-8
+    threads:
+      max: 50
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+    context-path: /api
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+  datasource:
+    sql-script-encoding: UTF-8
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 15
+      auto-commit: true
+      idle-timeout: 30000
+      pool-name: KccHikariCP
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      connection-test-query: SELECT 1
+      registerMbeans: true
+      jdbc-url: jdbc:mysql://${DB_HOST}:${DB_PORT}/base_location?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=UTF-8&allowPublicKeyRetrieval=true&autoReconnect=true&useSSL=false&zeroDateTimeBehavior=convertToNull
+      username: ${DB_USERNAME}
+      password: ${DB_PASSWORD}
+      driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL5InnoDBDialect
+
+logging:
+  level:
+    com:
+      ixecloud:
+        position:
+          baselocation:
+            controller: debug
+            util: debug
