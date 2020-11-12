@@ -5,17 +5,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @SpringBootTest
 class BaseLocationApplicationTests {
 
     @Test
     void contextLoads() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        /*SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String time = "1WEEK 1HOUR 14MINUTE 25SECOND";
         String[] uptimes = time.split(" ");
         int length = uptimes.length;
@@ -64,7 +61,7 @@ class BaseLocationApplicationTests {
             cal.add(Calendar.SECOND, -second);
         }
         String format = sdf.format(cal.getTime());
-        System.out.println(format);
+        System.out.println(format);*/
     }
 
 }

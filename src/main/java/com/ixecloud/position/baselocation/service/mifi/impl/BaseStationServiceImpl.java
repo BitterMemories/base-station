@@ -15,6 +15,7 @@ import com.ixecloud.position.baselocation.service.mifi.BaseStationService;
 import com.ixecloud.position.baselocation.service.mifi.DeviceService;
 import com.ixecloud.position.baselocation.util.HttpUtils;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -100,8 +102,10 @@ public class BaseStationServiceImpl implements BaseStationService {
                 .setParameter("bts", bts.toString())
                 .setParameter("nearbts", nearbts.toString()).toString();
 
+        logger.debug("request autonavi url: {}", url);
         //请求高德地图API接口
         String responseString = httpUtils.doGet(url);
+        logger.debug("response autonavi body: {}", responseString);
         AutoNaviEntity autoNaviEntity = JSON.parseObject(responseString, AutoNaviEntity.class);
         AutoNaviEntity.LocationInfo locationInfo = autoNaviEntity.getResult();
 
@@ -190,6 +194,8 @@ public class BaseStationServiceImpl implements BaseStationService {
             }*/
             if(succeed){
                 logger.debug("locationRefreshOperation deviceID:{} location refresh operation succeed!", deviceId);
+            }else {
+                logger.debug("locationRefreshOperation deviceID:{} location refresh operation failure!", deviceId);
             }
         }
     }
@@ -198,5 +204,31 @@ public class BaseStationServiceImpl implements BaseStationService {
     public DeviceLocation locationRefreshData(String deviceId) {
         DeviceLocation deviceLocation = deviceLocationRepository.findDeviceLocationByDeviceId(deviceId);
         return deviceLocation;
+    }
+
+    @Override
+    public AutoNaviEntity locationTest(String mmac, String[] macs) {
+
+        /*String uri = "http://apilocate.amap.com/position?";
+        uri = uri + "key=53b43fd0f88c5d98cb8dafeb4f98da82";
+        uri = uri + "&accesstype=0";
+        uri = uri + "&output=json";
+        uri = uri + "&mmac=" + mmac;
+        uri = uri + "&macs=" + StringUtils.join(macs, "|");*/
+        //构建请求高德APIURL
+        String url = new URIBuilder()
+                .setScheme("http")
+                .setHost("apilocate.amap.com")
+                .setPath("/position")
+                .setParameter("accesstype", "1")
+                .setParameter("output", "json")
+                .setParameter("mmac", mmac)
+                .setParameter("macs", StringUtils.join(macs, "|"))
+                .setParameter("key", "53b43fd0f88c5d98cb8dafeb4f98da82").toString();
+
+        //请求高德地图API接口
+        String responseString = httpUtils.doGet(url);
+        AutoNaviEntity autoNaviEntity = JSON.parseObject(responseString, AutoNaviEntity.class);
+        return autoNaviEntity;
     }
 }

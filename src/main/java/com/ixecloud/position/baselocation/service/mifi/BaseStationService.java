@@ -16,4 +16,6 @@ public interface BaseStationService {
 
     DeviceLocation locationRefreshData(String deviceId);
 
+    AutoNaviEntity locationTest(String mmac, String[] macs);
+
 }

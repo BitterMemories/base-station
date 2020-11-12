@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.List;
 
 
 @RestController
@@ -98,6 +99,13 @@ public class BaseStationController {
         }
         DeviceLocation deviceLocation = baseStationService.locationRefreshData(deviceId);
         return new Response(ResponseCode.OK, deviceLocation);
+    }
+
+    @GetMapping(value = "location-test")
+    public Response locationTest(@RequestParam(value = "mmac") String mmac, @RequestParam(value = "macs") String macs){
+        AutoNaviEntity autoNaviEntity = baseStationService.locationTest(mmac, macs.split("\\|"));
+        AutoNaviEntity.LocationInfo locationInfo = autoNaviEntity.getResult();
+        return new Response(ResponseCode.OK, locationInfo);
     }
 
 }
