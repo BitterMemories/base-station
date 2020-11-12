@@ -3,11 +3,14 @@ package com.ixecloud.position.baselocation.service.mifi.impl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.ixecloud.position.baselocation.common.ApiConstant;
-import com.ixecloud.position.baselocation.enums.ErrorCode;
-import com.ixecloud.position.baselocation.exception.CustomBaseException;
+import com.ixecloud.position.baselocation.domain.Device;
+import com.ixecloud.position.baselocation.domain.DeviceLocation;
 import com.ixecloud.position.baselocation.pojo.mifi.request.BaseEntity;
+import com.ixecloud.position.baselocation.repository.DeviceLocationRepository;
+import com.ixecloud.position.baselocation.repository.DeviceRepository;
 import com.ixecloud.position.baselocation.service.mifi.DeviceService;
 import com.ixecloud.position.baselocation.util.HttpUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +21,12 @@ import org.springframework.stereotype.Service;
 public class DeviceServiceImpl implements DeviceService {
 
     private static final Logger logger = LoggerFactory.getLogger(DeviceServiceImpl.class);
+
+    @Autowired
+    private DeviceRepository deviceRepository;
+
+    @Autowired
+    private DeviceLocationRepository deviceLocationRepository;
 
     @Autowired
     private HttpUtils httpUtils;
@@ -35,8 +44,24 @@ public class DeviceServiceImpl implements DeviceService {
     public boolean gatherBaseStation(String deviceId) {
         JSONObject requestJson = new JSONObject();
         requestJson.put("id", deviceId);
+        requestJson.put("number", "6");
         JSONObject responseJson = httpUtils.mifiPost(ApiConstant.MIFI_BASE_STATION_URL, requestJson.toJSONString(), JSONObject.class);
         String result = responseJson.getString("result");
-        return StringUtils.equals("success", result);
+        boolean success = StringUtils.equals("success", result);
+        if(success){
+            Device dbDevice = deviceRepository.findDeviceByDeviceId(deviceId);
+            if(ObjectUtils.isNotEmpty(dbDevice)){
+                DeviceLocation deviceLocation = deviceLocationRepository.findDeviceLocationByDeviceId(deviceId);
+                deviceLocation.setFlag(0);
+                deviceLocationRepository.save(deviceLocation);
+                return true;
+            }
+            Device device = new Device();
+            device.setDeviceId(deviceId);
+            deviceRepository.save(device);
+            return true;
+        }else {
+            return false;
+        }
     }
 }

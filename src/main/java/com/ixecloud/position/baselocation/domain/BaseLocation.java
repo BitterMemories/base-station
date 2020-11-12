@@ -13,20 +13,26 @@ public class BaseLocation implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Column(name = "device_id")
+    private String deviceId;
+
     @Column(name = "lac")
-    private Integer lac;
+    private String lac;
 
     @Column(name = "cell_id")
-    private Integer cellId;
+    private String cellId;
 
     @Column(name = "mcc")
-    private Integer mcc;
+    private String mcc;
 
     @Column(name = "mnc")
-    private Integer mnc;
+    private String mnc;
 
-    @Column(name = "signal")
-    private Integer signal;
+    @Column(name = "`signal`")
+    private String signal;
+
+    @Column(name = "`flag`")
+    private Integer flag = 0;
 
     public Integer getId() {
         return id;
@@ -36,44 +42,60 @@ public class BaseLocation implements Serializable {
         this.id = id;
     }
 
-    public Integer getLac() {
+    public String getDeviceId() {
+        return deviceId;
+    }
+
+    public void setDeviceId(String deviceId) {
+        this.deviceId = deviceId;
+    }
+
+    public String getLac() {
         return lac;
     }
 
-    public void setLac(Integer lac) {
+    public void setLac(String lac) {
         this.lac = lac;
     }
 
-    public Integer getCellId() {
+    public String getCellId() {
         return cellId;
     }
 
-    public void setCellId(Integer cellId) {
+    public void setCellId(String cellId) {
         this.cellId = cellId;
     }
 
-    public Integer getMcc() {
+    public String getMcc() {
         return mcc;
     }
 
-    public void setMcc(Integer mcc) {
+    public void setMcc(String mcc) {
         this.mcc = mcc;
     }
 
-    public Integer getMnc() {
+    public String getMnc() {
         return mnc;
     }
 
-    public void setMnc(Integer mnc) {
+    public void setMnc(String mnc) {
         this.mnc = mnc;
     }
 
-    public Integer getSignal() {
+    public String getSignal() {
         return signal;
     }
 
-    public void setSignal(Integer signal) {
+    public void setSignal(String signal) {
         this.signal = signal;
+    }
+
+    public Integer getFlag() {
+        return flag;
+    }
+
+    public void setFlag(Integer flag) {
+        this.flag = flag;
     }
 
     @Override
@@ -84,6 +106,8 @@ public class BaseLocation implements Serializable {
                 .append("cellId", cellId)
                 .append("mcc", mcc)
                 .append("mnc", mnc)
-                .append("signal", signal).toString();
+                .append("signal", signal)
+                .append("flag", flag)
+                .append("deviceId", deviceId).toString();
     }
 }

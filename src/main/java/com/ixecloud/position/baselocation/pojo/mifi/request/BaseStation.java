@@ -1,24 +1,26 @@
 package com.ixecloud.position.baselocation.pojo.mifi.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 public class BaseStation {
 
-    @JsonProperty(value="id")
-    private String deviceId;
+    private String id;
 
-    private List<BaseStationInfo> baseStationInfoList;
+    private List<BaseStationInfo> data;
 
-    static class BaseStationInfo{
+    public static class BaseStationInfo{
 
         //位置区域码
         private String lac;
 
         //基站小区编号
-        @JsonProperty(value="cellid")
-        private String cellId;
+        private String cellid;
 
         //移动用户所属国家代码
         private String mcc;
@@ -27,8 +29,9 @@ public class BaseStation {
         private String mnc;
 
         //网络信号强度（单位dbm）
-        @JsonProperty(value="db")
-        private String signal;
+        private String dbm;
+
+        private Integer flag = 0;
 
         public String getLac() {
             return lac;
@@ -38,12 +41,12 @@ public class BaseStation {
             this.lac = lac;
         }
 
-        public String getCellId() {
-            return cellId;
+        public String getCellid() {
+            return cellid;
         }
 
-        public void setCellId(String cellId) {
-            this.cellId = cellId;
+        public void setCellid(String cellid) {
+            this.cellid = cellid;
         }
 
         public String getMcc() {
@@ -62,28 +65,57 @@ public class BaseStation {
             this.mnc = mnc;
         }
 
-        public String getSignal() {
-            return signal;
+        public String getDbm() {
+            return dbm;
         }
 
-        public void setSignal(String signal) {
-            this.signal = signal;
+        public void setDbm(String dbm) {
+            this.dbm = dbm;
+        }
+
+        public Integer getFlag() {
+            return flag;
+        }
+
+        public void setFlag(Integer flag) {
+            this.flag = flag;
+        }
+
+        @Override
+        public String toString() {
+            return new ToStringBuilder(this)
+                    .append("lac", lac)
+                    .append("cellid", cellid)
+                    .append("mcc", mcc)
+                    .append("mnc", mnc)
+                    .append("flag", flag)
+                    .append("dbm", dbm).toString();
         }
     }
 
-    public String getDeviceId() {
-        return deviceId;
+    public String getId() {
+        return id;
     }
 
-    public void setDeviceId(String deviceId) {
-        this.deviceId = deviceId;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public List<BaseStationInfo> getBaseStationInfoList() {
-        return baseStationInfoList;
+    public List<BaseStationInfo> getData() {
+        if(ObjectUtils.isNotEmpty(data)){
+            data = new ArrayList<>(new HashSet<>(data));
+        }
+        return data;
     }
 
-    public void setBaseStationInfoList(List<BaseStationInfo> baseStationInfoList) {
-        this.baseStationInfoList = baseStationInfoList;
+    public void setData(List<BaseStationInfo> data) {
+        this.data = data;
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("id", id)
+                .append("data", data).toString();
     }
 }

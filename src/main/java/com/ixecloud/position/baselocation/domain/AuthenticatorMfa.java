@@ -3,11 +3,10 @@ package com.ixecloud.position.baselocation.domain;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import javax.persistence.*;
-import java.io.Serializable;
 
 @Entity
-@Table(name = "device")
-public class Device implements Serializable {
+@Table(name = "authenticator_mfa")
+public class AuthenticatorMfa {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -15,6 +14,9 @@ public class Device implements Serializable {
 
     @Column(name = "device_id")
     private String deviceId;
+
+    @Column(name = "mfa_credentials")
+    private String mfaCredentials;
 
     public Integer getId() {
         return id;
@@ -33,10 +35,19 @@ public class Device implements Serializable {
     }
 
 
+    public String getMfaCredentials() {
+        return mfaCredentials;
+    }
+
+    public void setMfaCredentials(String mfaCredentials) {
+        this.mfaCredentials = mfaCredentials;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this)
                 .append("id", id)
-                .append("deviceId", deviceId).toString();
+                .append("deviceId", deviceId)
+                .append("mfaCredentials", mfaCredentials).toString();
     }
 }

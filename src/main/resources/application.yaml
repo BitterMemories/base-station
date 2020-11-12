@@ -49,3 +49,4 @@ logging:
           baselocation:
             controller: debug
             util: debug
+            service: debug
