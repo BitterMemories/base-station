@@ -52,8 +52,10 @@ public class DeviceServiceImpl implements DeviceService {
             Device dbDevice = deviceRepository.findDeviceByDeviceId(deviceId);
             if(ObjectUtils.isNotEmpty(dbDevice)){
                 DeviceLocation deviceLocation = deviceLocationRepository.findDeviceLocationByDeviceId(deviceId);
-                deviceLocation.setFlag(0);
-                deviceLocationRepository.save(deviceLocation);
+                if(ObjectUtils.isNotEmpty(deviceLocation)){
+                    deviceLocation.setFlag(0);
+                    deviceLocationRepository.save(deviceLocation);
+                }
                 return true;
             }
             Device device = new Device();

@@ -27,7 +27,7 @@ public class HttpUtils {
     private RestTemplate restTemplate;
 
     public <T>T mifiPost(String url, String body, Class<T> clazz){
-        logger.debug("requestURL:{}", url);
+        logger.debug("request url:{}", url);
         String sign = HmacUtil.toHexString(HmacUtil.hmacSHA512(body.getBytes(), "8385d4b8014511ea950400163e049e4e88217aeeabd44fe1b510e57286756cfe")).toUpperCase();
         HttpHeaders headers = new HttpHeaders();
         headers.add("uid", "8385a8da-0145-11ea-9504-00163e049e4e");
@@ -35,7 +35,7 @@ public class HttpUtils {
         MediaType type = MediaType.parseMediaType("application/json; charset=UTF-8");
         headers.setContentType(type);
         //将请求头部和参数合成一个请求
-        logger.debug("requestBody:{}", body);
+        logger.debug("request body:{}", body);
         HttpEntity<String> requestEntity = new HttpEntity<>(body, headers);
         //执行HTTP请求，将返回的结构使用ResultVO类格式化
         T t = restTemplate.postForObject(url, requestEntity, clazz);

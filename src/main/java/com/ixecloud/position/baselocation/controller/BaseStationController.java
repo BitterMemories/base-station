@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.List;
 
 
 @RestController
@@ -68,8 +67,8 @@ public class BaseStationController {
         String deviceId = requestJsonObject.getString("deviceId");
 
         //下达采集基站信息指令
-        //boolean succeed = deviceService.gatherBaseStation(deviceId);
-        if(true){
+        boolean succeed = deviceService.gatherBaseStation(deviceId);
+        if(succeed){
             return new Response(ResponseCode.OK);
         }else {
             return new Response(ResponseCode.GATHER_BASE_STATION_FAILED, "采集基站信息指令下发失败！");
