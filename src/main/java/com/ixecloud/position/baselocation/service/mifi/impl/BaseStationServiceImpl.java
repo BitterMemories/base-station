@@ -2,12 +2,13 @@ package com.ixecloud.position.baselocation.service.mifi.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.ixecloud.position.baselocation.controller.DeviceController;
 import com.ixecloud.position.baselocation.domain.BaseLocation;
 import com.ixecloud.position.baselocation.domain.Device;
 import com.ixecloud.position.baselocation.domain.DeviceLocation;
 import com.ixecloud.position.baselocation.pojo.mifi.request.BaseStation;
+import com.ixecloud.position.baselocation.pojo.mifi.request.BaseStationEliminateEntity;
 import com.ixecloud.position.baselocation.pojo.mifi.response.AutoNaviEntity;
+import com.ixecloud.position.baselocation.pojo.mifi.response.BaseStaticLocationEntity;
 import com.ixecloud.position.baselocation.repository.BaseLocationRepository;
 import com.ixecloud.position.baselocation.repository.DeviceLocationRepository;
 import com.ixecloud.position.baselocation.repository.DeviceRepository;
@@ -22,10 +23,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -49,82 +50,13 @@ public class BaseStationServiceImpl implements BaseStationService {
     @Autowired
     private DeviceService deviceService;
 
+    @Transactional
     @Override
     public void AutoNaviBaseStation(BaseStation baseStation) {
 
-        //配置高德API参数
-        StringBuilder bts = new StringBuilder();;
-        StringBuilder nearbts = new StringBuilder();
         List<BaseStation.BaseStationInfo> baseStationInfoList = baseStation.getData();
 
-        baseStationInfoList = baseStationInfoList.stream().sorted((s, y) -> Integer.compare(Integer.parseInt(y.getDbm()), Integer.parseInt(s.getDbm()))).collect(Collectors.toList());
-
-        long array_size;
-        long count = baseStationInfoList.stream().filter(m -> Integer.parseInt(m.getDbm()) >= -50).count();
-        array_size = count >= 2 ? count : 2;
-
-        for (int i = 0; i < array_size; i++) {
-            BaseStation.BaseStationInfo baseStationInfo = baseStationInfoList.get(i);
-            baseStationInfo.setFlag(1);
-            if(i == 0){
-                bts.append(baseStationInfo.getMcc())
-                        .append(",").append(baseStationInfo.getMnc())
-                        .append(",").append(baseStationInfo.getLac())
-                        .append(",").append(baseStationInfo.getCellid())
-                        .append(",").append(baseStationInfo.getDbm());
-            }else if(i == 1) {
-                nearbts.append(baseStationInfo.getMcc())
-                        .append(",").append(baseStationInfo.getMnc())
-                        .append(",").append(baseStationInfo.getLac())
-                        .append(",").append(baseStationInfo.getCellid())
-                        .append(",").append(baseStationInfo.getDbm());
-            }else {
-                nearbts.append("|").append(baseStationInfo.getMcc())
-                        .append(",").append(baseStationInfo.getMnc())
-                        .append(",").append(baseStationInfo.getLac())
-                        .append(",").append(baseStationInfo.getCellid())
-                        .append(",").append(baseStationInfo.getDbm());
-            }
-        }
-
-        logger.debug("request autonavi base-station param bts: {}\nnearbts: {}", bts, nearbts);
-
-        //构建请求高德APIURL
-        String url = new URIBuilder()
-                .setScheme("http")
-                .setHost("apilocate.amap.com")
-                .setPath("/position")
-                .setParameter("accesstype", "0")
-                .setParameter("imei", baseStation.getId())
-                .setParameter("cdma", "0")
-                .setParameter("output", "json")
-                .setParameter("key", "53b43fd0f88c5d98cb8dafeb4f98da82")
-                .setParameter("bts", bts.toString())
-                .setParameter("nearbts", nearbts.toString()).toString();
-
-        logger.debug("request autonavi url: {}", url);
-        //请求高德地图API接口
-        String responseString = httpUtils.doGet(url);
-        logger.debug("response autonavi body: {}", responseString);
-        AutoNaviEntity autoNaviEntity = JSON.parseObject(responseString, AutoNaviEntity.class);
-        AutoNaviEntity.LocationInfo locationInfo = autoNaviEntity.getResult();
-
-        //持久化地理位置信息
-        DeviceLocation deviceLocation = new DeviceLocation();
-        deviceLocation.setDeviceId(baseStation.getId());
-        BeanUtils.copyProperties(locationInfo, deviceLocation);
-        String[] location = locationInfo.getLocation().split(",");
-        deviceLocation.setLat(location[0]);
-        deviceLocation.setLon(location[1]);
-        deviceLocation.setFlag(1);
-
-        //删除之前的地理位置信息
-        DeviceLocation dbDeviceLocation = deviceLocationRepository.findDeviceLocationByDeviceId(deviceLocation.getDeviceId());
-        if(ObjectUtils.isNotEmpty(dbDeviceLocation)){
-            baseLocationRepository.deleteBaseLocationByDeviceId(deviceLocation.getDeviceId());
-            deviceLocationRepository.deleteDeviceLocationByDeviceId(deviceLocation.getDeviceId());
-        }
-
+        //存储上报得基站列表数据
         List<BaseLocation> baseLocationList = baseStationInfoList.stream().map(baseStationInfo -> {
             BaseLocation baseLocation = new BaseLocation();
             baseLocation.setCellId(baseStationInfo.getCellid());
@@ -138,28 +70,45 @@ public class BaseStationServiceImpl implements BaseStationService {
                 dbm = String.valueOf(dbmInt);
             }
             baseLocation.setSignal(dbm);
-            baseLocation.setDeviceId(deviceLocation.getDeviceId());
+            baseLocation.setDeviceId(baseStation.getId());
             return baseLocation;
         }).collect(Collectors.toList());
-
+        baseLocationRepository.deleteBaseLocationByDeviceId(baseStation.getId());
         baseLocationRepository.saveAll(baseLocationList);
+
+        //按照信号值大小排序后定位
+        List<BaseLocation> baseLocations = baseLocationList.stream().sorted((s, y) -> Integer.compare(Integer.parseInt(y.getSignal()), Integer.parseInt(s.getSignal()))).collect(Collectors.toList());
+        AutoNaviEntity.LocationInfo locationInfo = autoNaviPosition(baseLocations);
+
+        //存储设备地理位置信息
+        DeviceLocation deviceLocation = new DeviceLocation();
+        deviceLocation.setDeviceId(baseStation.getId());
+        BeanUtils.copyProperties(locationInfo, deviceLocation);
+        String[] location = locationInfo.getLocation().split(",");
+        deviceLocation.setLat(location[0]);
+        deviceLocation.setLon(location[1]);
+        deviceLocation.setFlag(1);
+
+        deviceLocationRepository.deleteDeviceLocationByDeviceId(deviceLocation.getDeviceId());
         deviceLocationRepository.save(deviceLocation);
     }
 
     @Override
     public JSONObject getDeviceLocationInfo(String deviceId) {
-        //查询设备地理位置信息
+        //查询设备信息
         Device device = deviceRepository.findDeviceByDeviceId(deviceId);
-        DeviceLocation deviceLocation = deviceLocationRepository.findDeviceLocationByDeviceId(deviceId);
         JSONObject responseJson = JSON.parseObject(JSON.toJSONString(device));
+
+        //查询设备地理位置信息
+        DeviceLocation deviceLocation = deviceLocationRepository.findDeviceLocationByDeviceId(deviceId);
         responseJson.put("deviceLocation", deviceLocation);
 
-        //查询基站列表并按照运营商不同分组
         List<BaseLocation> baseLocationsMobile = new ArrayList<>();
         List<BaseLocation> baseLocationsUnicom = new ArrayList<>();
         List<BaseLocation> baseLocationsTelecom = new ArrayList<>();
-        List<BaseLocation> baseLocationList = baseLocationRepository.findBaseLocationByDeviceId(deviceId);
+        List<BaseLocation> baseLocationList = baseLocationRepository.findBaseLocationsByDeviceIdOrderBySignalAsc(deviceId);
         baseLocationList.forEach(baseLocation -> {
+            //信号数字百分比化
             DecimalFormat df = new DecimalFormat("0.00");
             if(Integer.parseInt(baseLocation.getSignal() ) >= -50){
                 baseLocation.setSignal("1.00");
@@ -167,12 +116,17 @@ public class BaseStationServiceImpl implements BaseStationService {
                 baseLocation.setSignal(df.format((110.00 - Math.abs(Integer.parseInt(baseLocation.getSignal()) + 50)) / 110.00));
             }
 
-            if(baseLocation.getMnc().equals("0")){
-                baseLocationsMobile.add(baseLocation);
-            }else if(baseLocation.getMnc().equals("1")){
-                baseLocationsUnicom.add(baseLocation);
-            }else if(baseLocation.getMnc().equals("11")){
-                baseLocationsTelecom.add(baseLocation);
+            //按照运营商不同对基站分组
+            switch (baseLocation.getMnc()) {
+                case "0":
+                    baseLocationsMobile.add(baseLocation);
+                    break;
+                case "1":
+                    baseLocationsUnicom.add(baseLocation);
+                    break;
+                case "11":
+                    baseLocationsTelecom.add(baseLocation);
+                    break;
             }
         });
         JSONObject operatorsJson = new JSONObject();
@@ -183,15 +137,16 @@ public class BaseStationServiceImpl implements BaseStationService {
         return responseJson;
     }
 
+    @Transactional
     @Override
     public void locationRefreshOperation(String deviceId) {
         DeviceLocation deviceLocation = deviceLocationRepository.findDeviceLocationByDeviceId(deviceId);
         if(ObjectUtils.isNotEmpty(deviceLocation)){
             boolean succeed = deviceService.gatherBaseStation(deviceId);
-            /*if(succeed){
+            if(succeed){
                 deviceLocation.setFlag(0);
                 deviceLocationRepository.save(deviceLocation);
-            }*/
+            }
             if(succeed){
                 logger.debug("locationRefreshOperation deviceID:{} location refresh operation succeed!", deviceId);
             }else {
@@ -209,12 +164,6 @@ public class BaseStationServiceImpl implements BaseStationService {
     @Override
     public AutoNaviEntity locationTest(String mmac, String[] macs) {
 
-        /*String uri = "http://apilocate.amap.com/position?";
-        uri = uri + "key=53b43fd0f88c5d98cb8dafeb4f98da82";
-        uri = uri + "&accesstype=0";
-        uri = uri + "&output=json";
-        uri = uri + "&mmac=" + mmac;
-        uri = uri + "&macs=" + StringUtils.join(macs, "|");*/
         //构建请求高德APIURL
         String url = new URIBuilder()
                 .setScheme("http")
@@ -230,5 +179,148 @@ public class BaseStationServiceImpl implements BaseStationService {
         String responseString = httpUtils.doGet(url);
         AutoNaviEntity autoNaviEntity = JSON.parseObject(responseString, AutoNaviEntity.class);
         return autoNaviEntity;
+    }
+
+    @Override
+    public List<BaseStaticLocationEntity> positionCheck(String deviceId) {
+        List<BaseStaticLocationEntity> baseStaticLocationEntityList = new ArrayList<>();
+
+        //对基站列表两两组合排列逐一定位排查
+        List<BaseLocation> baseLocationList = baseLocationRepository.findBaseLocationsByDeviceIdOrderBySignalAsc(deviceId);
+        for (int i = 0; i < baseLocationList.size() - 1; i++) {
+            for (int j = i + 1; j < baseLocationList.size() ; j++) {
+                List<BaseLocation> baseLocations = new ArrayList<>();
+                BaseLocation baseLocation1 = baseLocationList.get(i);
+                baseLocations.add(baseLocation1);
+
+                BaseLocation baseLocation2 = baseLocationList.get(j);
+                baseLocations.add(baseLocation2);
+
+                //构建请求高德APIURL
+                String url = new URIBuilder()
+                        .setScheme("http")
+                        .setHost("apilocate.amap.com")
+                        .setPath("/position")
+                        .setParameter("accesstype", "0")
+                        .setParameter("cdma", "0")
+                        .setParameter("output", "json")
+                        .setParameter("key", "53b43fd0f88c5d98cb8dafeb4f98da82")
+                        .setParameter("bts", baseLocation1.toStringAutoNavi())
+                        .setParameter("nearbts", baseLocation2.toStringAutoNavi()).toString();
+
+                logger.debug("request autonavi url: {}", url);
+                //请求高德地图API接口
+                String responseString = httpUtils.doGet(url);
+                logger.debug("response autonavi body: {}", responseString);
+                AutoNaviEntity autoNaviEntity = JSON.parseObject(responseString, AutoNaviEntity.class);
+                AutoNaviEntity.LocationInfo locationInfo = autoNaviEntity.getResult();
+
+                BaseStaticLocationEntity baseStaticLocationEntity = new BaseStaticLocationEntity();
+                BeanUtils.copyProperties(locationInfo, baseStaticLocationEntity);
+                baseStaticLocationEntity.setBaseLocationList(baseLocations);
+                baseStaticLocationEntityList.add(baseStaticLocationEntity);
+            }
+        }
+        return baseStaticLocationEntityList;
+    }
+
+    @Transactional
+    @Override
+    public void removeBaseStationEliminate(BaseStationEliminateEntity baseStationEliminateEntity) {
+        //剔除基站，设置Flag=2
+        List<BaseLocation> baseLocationList = baseLocationRepository.findBaseLocationsByDeviceIdAndCellId(baseStationEliminateEntity.getDeviceId(), baseStationEliminateEntity.getCellId());
+        baseLocationList.forEach(baseLocation -> baseLocation.setFlag(2));
+        baseLocationRepository.saveAll(baseLocationList);
+
+        List<BaseLocation> baseLocations = baseLocationRepository.findBaseLocationsByDeviceIdOrderBySignalAsc(baseStationEliminateEntity.getDeviceId());
+        AutoNaviEntity.LocationInfo autoNaviPosition = autoNaviPosition(baseLocations);
+
+        //存储地理位置信息
+        DeviceLocation deviceLocation = deviceLocationRepository.findDeviceLocationByDeviceId(baseStationEliminateEntity.getDeviceId());
+        BeanUtils.copyProperties(autoNaviPosition, deviceLocation);
+        String[] location = autoNaviPosition.getLocation().split(",");
+        deviceLocation.setLat(location[0]);
+        deviceLocation.setLon(location[1]);
+        deviceLocation.setFlag(1);
+        deviceLocationRepository.save(deviceLocation);
+    }
+
+
+    @Transactional
+    @Override
+    public void recoverBaseStationEliminate(BaseStationEliminateEntity baseStationEliminateEntity) {
+        //重置基站
+        baseLocationRepository.updateBaseLocationsResetFlag(baseStationEliminateEntity.getDeviceId());
+
+        //恢复基站
+        baseLocationRepository.updateBaseLocationsFlagByCellId(baseStationEliminateEntity.getDeviceId(), baseStationEliminateEntity.getDeviceId());
+
+        //高德定位
+        List<BaseLocation> baseLocationList = baseLocationRepository.findBaseLocationsByDeviceIdOrderBySignalAsc(baseStationEliminateEntity.getDeviceId());
+        AutoNaviEntity.LocationInfo autoNaviPosition = autoNaviPosition(baseLocationList);
+
+        //存储地理位置信息
+        DeviceLocation deviceLocation = deviceLocationRepository.findDeviceLocationByDeviceId(baseStationEliminateEntity.getDeviceId());
+        BeanUtils.copyProperties(autoNaviPosition, deviceLocation);
+        String[] location = autoNaviPosition.getLocation().split(",");
+        deviceLocation.setLat(location[0]);
+        deviceLocation.setLon(location[1]);
+        deviceLocation.setFlag(1);
+        deviceLocationRepository.save(deviceLocation);
+    }
+
+    @Override
+    public List<BaseLocation> getBaseStationEliminate(String deviceId) {
+        List<BaseLocation> baseLocationList = baseLocationRepository.findBaseLocationsByDeviceIdAndFlag(deviceId, 2);
+        return baseLocationList;
+    }
+
+    //高德API统一定位接口
+    private AutoNaviEntity.LocationInfo autoNaviPosition(List<BaseLocation> baseLocationList){
+        for (int i = 0; i < baseLocationList.size(); i++) {
+            BaseLocation baseLocation = baseLocationList.get(i);
+            if(baseLocation.getFlag() == 2){
+                baseLocationList.remove(i);
+            }
+        }
+
+        StringBuilder bts = new StringBuilder();;
+        StringBuilder nearbts = new StringBuilder();
+        long array_size;
+        long count = baseLocationList.stream().filter(m -> Integer.parseInt(m.getSignal()) >= -50).count();
+        array_size = count >= 2 ? count : 2;
+        for (int i = 0; i < array_size; i++) {
+            BaseLocation baseLocation = baseLocationList.get(i);
+            baseLocation.setFlag(1);
+            if(i == 0){
+                bts.append(baseLocation.toStringAutoNavi());
+            }else if(i == 1) {
+                nearbts.append(baseLocation.toStringAutoNavi());
+            }else {
+                nearbts.append("|").append(baseLocation.toStringAutoNavi());
+            }
+        }
+
+        logger.debug("request autonavi base-station param bts: {}\nnearbts: {}", bts, nearbts);
+
+        //构建请求高德APIURL
+        String url = new URIBuilder()
+                .setScheme("http")
+                .setHost("apilocate.amap.com")
+                .setPath("/position")
+                .setParameter("accesstype", "0")
+                .setParameter("cdma", "0")
+                .setParameter("output", "json")
+                .setParameter("key", "53b43fd0f88c5d98cb8dafeb4f98da82")
+                .setParameter("bts", bts.toString())
+                .setParameter("nearbts", nearbts.toString()).toString();
+
+        logger.debug("request autonavi url: {}", url);
+        //请求高德地图API接口
+        String responseString = httpUtils.doGet(url);
+        logger.debug("response autonavi body: {}", responseString);
+        AutoNaviEntity autoNaviEntity = JSON.parseObject(responseString, AutoNaviEntity.class);
+        AutoNaviEntity.LocationInfo locationInfo = autoNaviEntity.getResult();
+        return locationInfo;
     }
 }

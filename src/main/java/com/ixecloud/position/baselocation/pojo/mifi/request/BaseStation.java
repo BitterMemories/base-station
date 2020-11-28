@@ -1,6 +1,5 @@
 package com.ixecloud.position.baselocation.pojo.mifi.request;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
@@ -90,6 +89,14 @@ public class BaseStation {
                     .append("mnc", mnc)
                     .append("flag", flag)
                     .append("dbm", dbm).toString();
+        }
+
+        public String toStringAutoNavi(){
+            return mcc + ","
+                    + mnc + ","
+                    + lac + ","
+                    + cellid + ","
+                    + dbm;
         }
     }
 

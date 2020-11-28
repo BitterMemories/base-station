@@ -110,4 +110,12 @@ public class BaseLocation implements Serializable {
                 .append("flag", flag)
                 .append("deviceId", deviceId).toString();
     }
+
+    public String toStringAutoNavi(){
+        return mcc + ","
+                + mnc + ","
+                + lac + ","
+                + cellId + ","
+                + signal;
+    }
 }
