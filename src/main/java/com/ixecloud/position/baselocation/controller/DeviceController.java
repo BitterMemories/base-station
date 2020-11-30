@@ -9,10 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.TimeZone;
 
 @RestController
@@ -57,49 +55,25 @@ public class DeviceController {
         String uptime = responseJson.getJSONObject("data").getString("uptime");
         String[] uptimes = uptime.split(" ");
         logger.debug("uptime size: {},uptimes: {}", uptimes.length, uptimes);
-        int length = uptimes.length;
         Calendar cal = Calendar.getInstance();
-        cal.setTime(new Date());
-        if(length == 1){
-            String strings = uptimes[0];
-            int second = Integer.parseInt(strings.replace("SECOND", ""));
-            cal.add(Calendar.SECOND, -second);
-        }else if(length == 2){
-            String strings = uptimes[0];
-            int minute = Integer.parseInt(strings.replace("MINUTE", ""));
-            cal.add(Calendar.MINUTE, -minute);
-
-            strings = uptimes[1];
-            int second = Integer.parseInt(strings.replace("SECOND", ""));
-            cal.add(Calendar.SECOND, -second);
-        }else if(length == 3){
-            String strings = uptimes[0];
-            int hour = Integer.parseInt(strings.replace("HOUR", ""));
-            cal.add(Calendar.HOUR, -hour);
-
-            strings = uptimes[1];
-            int minute = Integer.parseInt(strings.replace("MINUTE", ""));
-            cal.add(Calendar.MINUTE, -minute);
-
-            strings = uptimes[2];
-            int second = Integer.parseInt(strings.replace("SECOND", ""));
-            cal.add(Calendar.SECOND, -second);
-        }else if(length == 4){
-            String strings = uptimes[0];
-            int week = Integer.parseInt(strings.replace("WEEK", ""));
-            cal.add(Calendar.WEEK_OF_MONTH, -week);
-
-            strings = uptimes[1];
-            int hour = Integer.parseInt(strings.replace("HOUR", ""));
-            cal.add(Calendar.HOUR, -hour);
-
-            strings = uptimes[2];
-            int minute = Integer.parseInt(strings.replace("MINUTE", ""));
-            cal.add(Calendar.MINUTE, -minute);
-
-            strings = uptimes[3];
-            int second = Integer.parseInt(strings.replace("SECOND", ""));
-            cal.add(Calendar.SECOND, -second);
+        for (String time:uptimes
+             ) {
+            if(time.contains("SECOND")){
+                int second = Integer.parseInt(time.replace("SECOND", ""));
+                cal.add(Calendar.SECOND, -second);
+            }else if(time.contains("MINUTE")){
+                int minute = Integer.parseInt(time.replace("MINUTE", ""));
+                cal.add(Calendar.MINUTE, -minute);
+            }else if(time.contains("HOUR")){
+                int hour = Integer.parseInt(time.replace("HOUR", ""));
+                cal.add(Calendar.HOUR, -hour);
+            }else if(time.contains("DAY")){
+                int day = Integer.parseInt(time.replace("DAY", ""));
+                cal.add(Calendar.DAY_OF_WEEK, -day);
+            }else if(time.contains("WEEK")){
+                int week = Integer.parseInt(time.replace("WEEK", ""));
+                cal.add(Calendar.WEEK_OF_MONTH, -week);
+            }
         }
         responseJson.getJSONObject("data").put("start-time", sdf.format(cal.getTime()));
 

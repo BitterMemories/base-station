@@ -281,6 +281,7 @@ public class BaseStationServiceImpl implements BaseStationService {
             BaseLocation baseLocation = baseLocationList.get(i);
             if(baseLocation.getFlag() == 2){
                 baseLocationList.remove(i);
+                i--;
             }
         }
 
@@ -289,6 +290,7 @@ public class BaseStationServiceImpl implements BaseStationService {
         long array_size;
         long count = baseLocationList.stream().filter(m -> Integer.parseInt(m.getSignal()) >= -50).count();
         array_size = count >= 2 ? count : 2;
+        array_size = baseLocationList.size() < 2 ? baseLocationList.size() : array_size;
         for (int i = 0; i < array_size; i++) {
             BaseLocation baseLocation = baseLocationList.get(i);
             baseLocation.setFlag(1);
