@@ -45,7 +45,8 @@ public class DeviceServiceImpl implements DeviceService {
         JSONObject requestJson = new JSONObject();
         requestJson.put("id", deviceId);
         requestJson.put("number", "6");
-        JSONObject responseJson = httpUtils.mifiPost(ApiConstant.MIFI_BASE_STATION_URL, requestJson.toJSONString(), JSONObject.class);
+        String responseString = httpUtils.post(requestJson.toJSONString(), ApiConstant.MIFI_BASE_STATION_URL);
+        JSONObject responseJson = JSONObject.parseObject(responseString);
         String result = responseJson.getString("result");
         boolean success = StringUtils.equals("success", result);
         if(success){

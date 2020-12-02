@@ -1,7 +1,6 @@
 package com.ixecloud.position.baselocation.util;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -55,22 +54,10 @@ public class HttpUtils {
             return null;
 
         }
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
-        String requestJson = null;
-        try {
-            requestJson = objectMapper.writeValueAsString(value);
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-
-        }
-
-        logger.debug("requestJson:{}", requestJson);
+        logger.debug("requestJson:{}", JSON.toJSONString(value));
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON_UTF8);
-        HttpEntity<String> entity = new HttpEntity<String>(requestJson, headers);
+        HttpEntity<Object> entity = new HttpEntity<>(value, headers);
         SimpleClientHttpRequestFactory requestFactory = new  SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(180000);// 设置超时
         requestFactory.setReadTimeout(180000);

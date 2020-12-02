@@ -1,12 +1,17 @@
 package com.ixecloud.position.baselocation;
 
 import com.ixecloud.position.baselocation.common.CommonHandler;
+import com.ixecloud.position.baselocation.util.HttpUtils;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import java.util.*;
 
 @SpringBootTest
 class BaseLocationApplicationTests {
+
+    @Autowired
+    private HttpUtils httpUtils;
 
     @Test
     void contextLoads() {
@@ -16,20 +21,8 @@ class BaseLocationApplicationTests {
 
     @Test
     void test(){
-        List<Integer> mylist = Arrays.asList(1,2,3);
-        //Map<Integer, Integer> mymap = new HashMap<Integer, Integer>();
-        List<String> list = new ArrayList<String>();
-        for(int i=0;i< mylist.size()-1;i++)
-        {
-            for(int j=i+1;j< mylist.size();j++)
-            {
-                list.add(mylist.get(i)+":"+mylist.get(j));
-            }
-        }
-        for(int k = 0; k< list.size(); k++)
-        {
-            System.out.println(list.get(k));
-        }
+        String fuck = httpUtils.mifiPost("http://103.220.124.107:28018/api/notice", "{\"number\":\"6\",\"id\":\"6301002031000241\"}", String.class);
+        System.out.println(fuck);
     }
 
     private void driverGetLinks() {
