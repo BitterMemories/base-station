@@ -1,9 +1,10 @@
 package com.ixecloud.position.baselocation.domain;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-
 import javax.persistence.*;
 import java.io.Serializable;
+import java.util.Date;
 
 @Entity
 @Table(name = "base_location")
@@ -15,6 +16,9 @@ public class BaseLocation implements Serializable {
 
     @Column(name = "device_id")
     private String deviceId;
+
+    @Column(name = "location_uuid")
+    private String locationUuid;
 
     @Column(name = "lac")
     private String lac;
@@ -30,6 +34,10 @@ public class BaseLocation implements Serializable {
 
     @Column(name = "`signal`")
     private String signal;
+
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone="GMT+8")
+    @Column(name = "create_time", columnDefinition = "TIMESTAMP")
+    private String createTime;
 
     @Column(name = "`flag`")
     private Integer flag = 0;
@@ -98,6 +106,23 @@ public class BaseLocation implements Serializable {
         this.flag = flag;
     }
 
+    public String getLocationUuid() {
+        return locationUuid;
+    }
+
+    public void setLocationUuid(String locationUuid) {
+        this.locationUuid = locationUuid;
+    }
+
+
+    public String getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(String createTime) {
+        this.createTime = createTime;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this)
@@ -107,7 +132,9 @@ public class BaseLocation implements Serializable {
                 .append("mcc", mcc)
                 .append("mnc", mnc)
                 .append("signal", signal)
+                .append("createTime", createTime)
                 .append("flag", flag)
+                .append("locationUuid", locationUuid)
                 .append("deviceId", deviceId).toString();
     }
 

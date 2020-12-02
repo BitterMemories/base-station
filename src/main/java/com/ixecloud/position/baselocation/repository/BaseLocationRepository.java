@@ -16,6 +16,7 @@ public interface BaseLocationRepository extends JpaRepository<BaseLocation, Inte
     @Transactional
     int deleteBaseLocationByDeviceId(String deviceId);
 
+    @Query(value = "SELECT * FROM base_location WHERE location_uuid=(select location_uuid from base_location WHERE device_id=?1 ORDER BY create_time desc LIMIT 1);", nativeQuery = true)
     List<BaseLocation> findBaseLocationsByDeviceIdOrderBySignalAsc(String deviceId);
 
     List<BaseLocation> findBaseLocationsByDeviceIdAndCellId(String deviceId, String cellId);

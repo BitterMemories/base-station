@@ -14,6 +14,7 @@ import com.ixecloud.position.baselocation.repository.DeviceLocationRepository;
 import com.ixecloud.position.baselocation.repository.DeviceRepository;
 import com.ixecloud.position.baselocation.service.mifi.BaseStationService;
 import com.ixecloud.position.baselocation.service.mifi.DeviceService;
+import com.ixecloud.position.baselocation.util.FormatDateTime;
 import com.ixecloud.position.baselocation.util.HttpUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -24,10 +25,11 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -57,6 +59,8 @@ public class BaseStationServiceImpl implements BaseStationService {
         List<BaseStation.BaseStationInfo> baseStationInfoList = baseStation.getData();
 
         //存储上报得基站列表数据
+        String locationUuid = UUID.randomUUID().toString();
+        String currentTimeForCN = FormatDateTime.getCurrentTimeForCN();
         List<BaseLocation> baseLocationList = baseStationInfoList.stream().map(baseStationInfo -> {
             BaseLocation baseLocation = new BaseLocation();
             baseLocation.setCellId(baseStationInfo.getCellid());
@@ -70,10 +74,11 @@ public class BaseStationServiceImpl implements BaseStationService {
                 dbm = String.valueOf(dbmInt);
             }
             baseLocation.setSignal(dbm);
+            baseLocation.setLocationUuid(locationUuid);
+            baseLocation.setCreateTime(currentTimeForCN);
             baseLocation.setDeviceId(baseStation.getId());
             return baseLocation;
         }).collect(Collectors.toList());
-        baseLocationRepository.deleteBaseLocationByDeviceId(baseStation.getId());
         baseLocationRepository.saveAll(baseLocationList);
 
         //按照信号值大小排序后定位
@@ -83,13 +88,13 @@ public class BaseStationServiceImpl implements BaseStationService {
         //存储设备地理位置信息
         DeviceLocation deviceLocation = new DeviceLocation();
         deviceLocation.setDeviceId(baseStation.getId());
+        deviceLocation.setLocationUuid(locationUuid);
         BeanUtils.copyProperties(locationInfo, deviceLocation);
         String[] location = locationInfo.getLocation().split(",");
         deviceLocation.setLat(location[0]);
         deviceLocation.setLon(location[1]);
+        deviceLocation.setCreateTime(currentTimeForCN);
         deviceLocation.setFlag(1);
-
-        deviceLocationRepository.deleteDeviceLocationByDeviceId(deviceLocation.getDeviceId());
         deviceLocationRepository.save(deviceLocation);
     }
 

@@ -1,10 +1,13 @@
 package com.ixecloud.position.baselocation;
 
 import com.ixecloud.position.baselocation.common.CommonHandler;
+import com.ixecloud.position.baselocation.util.FormatDateTime;
 import com.ixecloud.position.baselocation.util.HttpUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import java.text.ParsePosition;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 @SpringBootTest
@@ -21,8 +24,8 @@ class BaseLocationApplicationTests {
 
     @Test
     void test(){
-        String fuck = httpUtils.mifiPost("http://103.220.124.107:28018/api/notice", "{\"number\":\"6\",\"id\":\"6301002031000241\"}", String.class);
-        System.out.println(fuck);
+        String string = UUID.randomUUID().toString();
+        System.out.println(string);
     }
 
     private void driverGetLinks() {

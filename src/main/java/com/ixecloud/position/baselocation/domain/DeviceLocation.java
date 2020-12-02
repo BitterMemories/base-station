@@ -1,5 +1,6 @@
 package com.ixecloud.position.baselocation.domain;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import javax.persistence.*;
@@ -14,6 +15,9 @@ public class DeviceLocation {
 
     @Column(name = "device_id")
     private String deviceId;
+
+    @Column(name = "location_uuid")
+    private String locationUuid;
 
     @Column(name = "city")
     private String city;
@@ -53,6 +57,10 @@ public class DeviceLocation {
 
     @Column(name = "citycode")
     private String citycode;
+
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss",timezone="GMT+8")
+    @Column(name = "create_time", columnDefinition = "TIMESTAMP")
+    private String createTime;
 
     @Column(name = "flag")
     private Integer flag;
@@ -177,6 +185,22 @@ public class DeviceLocation {
         this.citycode = citycode;
     }
 
+    public String getLocationUuid() {
+        return locationUuid;
+    }
+
+    public void setLocationUuid(String locationUuid) {
+        this.locationUuid = locationUuid;
+    }
+
+    public String getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(String createTime) {
+        this.createTime = createTime;
+    }
+
     public Integer getFlag() {
         return flag;
     }
@@ -190,6 +214,7 @@ public class DeviceLocation {
         return new ToStringBuilder(this)
                 .append("id", id)
                 .append("deviceId", deviceId)
+                .append("locationUuid", locationUuid)
                 .append("city", city)
                 .append("province", province)
                 .append("poi", poi)
@@ -203,6 +228,7 @@ public class DeviceLocation {
                 .append("road", road)
                 .append("radius", radius)
                 .append("citycode", citycode)
+                .append("createTime", createTime)
                 .append("flag", flag).toString();
     }
 }
