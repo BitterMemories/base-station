@@ -19,7 +19,7 @@ public interface BaseLocationRepository extends JpaRepository<BaseLocation, Inte
     @Query(value = "SELECT * FROM base_location WHERE location_uuid=(select location_uuid from base_location WHERE device_id=?1 ORDER BY create_time desc LIMIT 1);", nativeQuery = true)
     List<BaseLocation> findBaseLocationsByDeviceIdOrderBySignalAsc(String deviceId);
 
-    List<BaseLocation> findBaseLocationsByDeviceIdAndCellId(String deviceId, String cellId);
+    List<BaseLocation> findBaseLocationsByDeviceIdAndCellIdAndMnc(String deviceId, String cellId, String mnc);
 
     List<BaseLocation> findBaseLocationsByDeviceIdAndFlag(String deviceId, Integer flag);
 

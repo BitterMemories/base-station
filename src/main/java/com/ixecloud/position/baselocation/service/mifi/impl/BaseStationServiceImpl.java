@@ -233,7 +233,7 @@ public class BaseStationServiceImpl implements BaseStationService {
     @Override
     public void removeBaseStationEliminate(BaseStationEliminateEntity baseStationEliminateEntity) {
         //剔除基站，设置Flag=2
-        List<BaseLocation> baseLocationList = baseLocationRepository.findBaseLocationsByDeviceIdAndCellId(baseStationEliminateEntity.getDeviceId(), baseStationEliminateEntity.getCellId());
+        List<BaseLocation> baseLocationList = baseLocationRepository.findBaseLocationsByDeviceIdAndCellIdAndMnc(baseStationEliminateEntity.getDeviceId(), baseStationEliminateEntity.getCellId(), baseStationEliminateEntity.getMnc());
         baseLocationList.forEach(baseLocation -> baseLocation.setFlag(2));
         baseLocationRepository.saveAll(baseLocationList);
 
