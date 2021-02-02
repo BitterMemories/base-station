@@ -44,7 +44,7 @@ public class DeviceServiceImpl implements DeviceService {
     public boolean gatherBaseStation(String deviceId) {
         JSONObject requestJson = new JSONObject();
         requestJson.put("id", deviceId);
-        requestJson.put("number", "6");
+        requestJson.put("number", "12");
         String responseString = httpUtils.post(requestJson.toJSONString(), ApiConstant.MIFI_BASE_STATION_URL);
         JSONObject responseJson = JSONObject.parseObject(responseString);
         String result = responseJson.getString("result");

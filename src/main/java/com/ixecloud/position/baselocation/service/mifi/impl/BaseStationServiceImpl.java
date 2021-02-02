@@ -292,10 +292,10 @@ public class BaseStationServiceImpl implements BaseStationService {
 
         StringBuilder bts = new StringBuilder();;
         StringBuilder nearbts = new StringBuilder();
-        long array_size;
-        long count = baseLocationList.stream().filter(m -> Integer.parseInt(m.getSignal()) >= -50).count();
-        array_size = count >= 2 ? count : 2;
-        array_size = baseLocationList.size() < 2 ? baseLocationList.size() : array_size;
+        long array_size = baseLocationList.size();
+        //long count = baseLocationList.stream().filter(m -> Integer.parseInt(m.getSignal()) >= -50).count();
+        //array_size = count >= 2 ? count : 2;
+        //array_size = baseLocationList.size() < 2 ? baseLocationList.size() : array_size;
         for (int i = 0; i < array_size; i++) {
             BaseLocation baseLocation = baseLocationList.get(i);
             baseLocation.setFlag(1);

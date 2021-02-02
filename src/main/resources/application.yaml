@@ -50,3 +50,5 @@ logging:
             controller: debug
             util: debug
             service: debug
+          util:
+            HttpUtils: debug

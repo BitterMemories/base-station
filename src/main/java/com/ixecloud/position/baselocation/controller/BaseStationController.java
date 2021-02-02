@@ -152,6 +152,7 @@ public class BaseStationController {
             logger.debug("deviceId不能为空!");
             return new Response(ResponseCode.BAD_REQUEST, "deviceId不能为空！");
         }
+        baseStationService.recoverBaseStationEliminate(baseStationEliminateEntity);
         return new Response(ResponseCode.OK);
     }
 
