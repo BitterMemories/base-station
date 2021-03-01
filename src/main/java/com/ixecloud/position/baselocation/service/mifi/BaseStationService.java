@@ -31,4 +31,6 @@ public interface BaseStationService {
 
     //基站恢复
     void recoverBaseStationEliminate(BaseStationEliminateEntity baseStationEliminateEntity);
+
+    JSONObject baseLocationScan(String deviceId);
 }

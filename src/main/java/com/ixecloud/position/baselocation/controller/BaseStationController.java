@@ -18,10 +18,16 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.bind.annotation.*;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 @RestController
@@ -35,6 +41,8 @@ public class BaseStationController {
 
     @Autowired
     private BaseStationService baseStationService;
+
+    public static Map<String, Long> MAP = new HashMap<>();
 
     //接收上报的基站数据
     @PostMapping(value = "notice")
@@ -166,6 +174,49 @@ public class BaseStationController {
         AutoNaviEntity autoNaviEntity = baseStationService.locationTest(mmac, macs.split("\\|"));
         AutoNaviEntity.LocationInfo locationInfo = autoNaviEntity.getResult();
         return new Response(ResponseCode.OK, locationInfo);
+    }
+
+    @GetMapping(value = "freeze-time")
+    public JSONObject freezeTime(@RequestParam(value = "deviceId") String deviceId){
+        JSONObject jsonObject = new JSONObject();
+        long timeMillis = System.currentTimeMillis();
+        Long aLong = BaseStationController.MAP.get(deviceId);
+        if (aLong == null){
+            aLong = 0L;
+        }
+        long current = (timeMillis - aLong) / 1000;
+        if(current < 90){
+            jsonObject.put("code", 1);
+            jsonObject.put("message", "冷冻时间还剩：" + (90 - current));
+            jsonObject.put("data", (90 - current));
+        }else {
+            jsonObject.put("code", 0);
+            jsonObject.put("message", "OK");
+        }
+        return jsonObject;
+    }
+
+
+    @GetMapping(value = "activate")
+    public JSONObject activate(@RequestParam(name = "deviceId") String deviceId){
+        long timeMillis = System.currentTimeMillis();
+        Long aLong = BaseStationController.MAP.get(deviceId);
+        if (aLong == null){
+            aLong = 0L;
+        }
+        long current = (timeMillis - aLong) / 1000;
+        JSONObject jsonObject = new JSONObject();
+        if(current < 90){
+            jsonObject.put("code", 1);
+            jsonObject.put("message", "冷冻时间还剩：" + (90 - current));
+            jsonObject.put("data", (90 - current));
+            return jsonObject;
+        }else {
+            BaseStationController.MAP.put(deviceId, System.currentTimeMillis());
+            jsonObject = baseStationService.baseLocationScan(deviceId);
+
+        }
+        return jsonObject;
     }
 
 }

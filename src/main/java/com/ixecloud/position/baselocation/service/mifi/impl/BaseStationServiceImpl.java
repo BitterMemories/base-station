@@ -1,7 +1,9 @@
 package com.ixecloud.position.baselocation.service.mifi.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.ixecloud.position.baselocation.controller.BaseStationController;
 import com.ixecloud.position.baselocation.domain.BaseLocation;
 import com.ixecloud.position.baselocation.domain.Device;
 import com.ixecloud.position.baselocation.domain.DeviceLocation;
@@ -23,13 +25,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
+
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -51,6 +58,9 @@ public class BaseStationServiceImpl implements BaseStationService {
 
     @Autowired
     private DeviceService deviceService;
+
+    @Autowired
+    private RestTemplate restTemplate;
 
     @Transactional
     @Override
@@ -272,6 +282,96 @@ public class BaseStationServiceImpl implements BaseStationService {
         deviceLocation.setLon(location[1]);
         deviceLocation.setFlag(1);
         deviceLocationRepository.save(deviceLocation);
+    }
+
+    @Override
+    public JSONObject baseLocationScan(String deviceId) {
+
+        Device device = deviceRepository.findDeviceByDeviceId(deviceId);
+        if(device == null){
+            BaseStationController.MAP.remove(deviceId);
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("code", 3);
+            jsonObject.put("message", "无此设备！");
+            return jsonObject;
+        }
+
+        JSONArray jsonArray = baseStationScan(deviceId);
+
+        if(jsonArray == null) {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("code", 4);
+            jsonObject.put("message", "没有扫描到基站信息！");
+            return jsonObject;
+        }
+        JSONObject jsonObjectResponse = autoNaviLocation(jsonArray);
+        if(jsonObjectResponse.getInteger("code") == 1 && jsonObjectResponse.getString("msg").equals("succeed")){
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("code", 0);
+            jsonObject.put("message", "OK");
+            jsonObject.put("data", jsonObjectResponse.get("data"));
+            return jsonObject;
+        }else {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("code", 5);
+            jsonObject.put("message", "高德定位失败！");
+            return jsonObject;
+        }
+    }
+
+    private JSONObject autoNaviLocation(JSONArray jsonArray){
+        String url = "http://172.20.180.80:30887/api/lbs/base-location/many";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Type", "application/json;charset=UTF-8");
+        headers.add("Accept", "application/json");
+
+        HttpEntity<JSONObject> responseEntity = restTemplate
+                .exchange(url,
+                        HttpMethod.POST,   //POST
+                        new HttpEntity<String>(jsonArray.toJSONString(), headers),   //加入headers
+                        JSONObject.class);  //body响应数据接收类型
+        JSONObject jsonObject = responseEntity.getBody();
+        return jsonObject;
+    }
+
+    private JSONArray baseStationScan(String deviceId){
+        String url = "http://172.20.180.80:30034/api/capi/initiative/base-location/info";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("authorization",
+                "Basic " +
+                        Base64.getEncoder()
+                                .encodeToString("capi:capi".getBytes()));
+        headers.add("Content-Type", "application/json;charset=UTF-8");
+        headers.add("Accept", "application/json");
+
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put("device_id", deviceId);
+
+        HttpEntity<String> responseEntity = restTemplate
+                .exchange(url,
+                        HttpMethod.POST,   //POST
+                        new HttpEntity<>(paramMap, headers),   //加入headers
+                        String.class);  //body响应数据接收类型
+        String entityBody = responseEntity.getBody();
+
+        JSONObject jsonObject = JSONObject.parseObject(entityBody);
+        JSONArray jsonArray = jsonObject.getJSONArray("data");
+
+        if(jsonArray == null){
+            return null;
+        }
+
+        for (int i = 0; i < jsonArray.size(); i++) {
+            JSONObject object = jsonArray.getJSONObject(i);
+            object.put("ci", object.getBigInteger("cellid"));
+            object.remove("cellid");
+            object.put("signal", object.getInteger("csq"));
+            object.remove("csq");
+        }
+
+        return jsonArray;
     }
 
     @Override

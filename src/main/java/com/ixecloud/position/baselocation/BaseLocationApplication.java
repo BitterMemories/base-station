@@ -25,7 +25,7 @@ public class BaseLocationApplication {
     public RestTemplate restTemplate() {
         return builder
                 .setConnectTimeout(Duration.ofSeconds(5))
-                .setReadTimeout(Duration.ofSeconds(5))
+                .setReadTimeout(Duration.ofSeconds(90))
                 .build();
     }
 
